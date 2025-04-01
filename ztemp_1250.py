@@ -72,3 +72,7 @@ if __name__ == "__main__":
     # Wait for threads to finish
     for thread in threads:
         thread.join()
+    
+    if is_executing_error[0]:
+        print("An error occurred in one of the threads. All processes have been stopped.")
+        raise Exception("An error occurred in one of the threads. All processes have been stopped.")
