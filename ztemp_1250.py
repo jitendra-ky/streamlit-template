@@ -7,19 +7,10 @@ import os
 pids = []
 is_executing_error = [False]
 
-def run_command(command: list[str], failed=False) -> None:
+def run_command(command: list[str]) -> None:
     """
     Executes a shell command in a separate thread and manages its PID.
     """
-    if failed:
-        # Wait for a few seconds before stopping all processes
-        # say after thee seconds some executing error occurs
-        print("Simulating an error in another thread...")
-        time.sleep(3)
-        is_executing_error[0] = True
-        stop_all_processes()
-        return
-        
     command = [str(c) for c in command]
     print(f"Running command: {' '.join(command)}")
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -43,6 +34,9 @@ def run_command(command: list[str], failed=False) -> None:
         print(f"process {child_pid}: Command finished successfully: {' '.join(command)}")
     else:
         print(f"process {child_pid}: Command failed: {' '.join(command)}\nError: {stderr.decode().strip()}")
+        is_executing_error[0] = True
+        stop_all_processes()
+        return
 
 def stop_all_processes():
     """
@@ -64,7 +58,8 @@ if __name__ == "__main__":
     commands = [
         ["ping", "127.0.0.1", "-n", "10"],
         ["ping", "127.0.0.1", "-n", "10"],
-        ["ping", "127.0.0.1", "-n", "15"]
+        ["ping", "127.0.0.1", "-n", "15"],
+        ["python", "-c", "import time; time.sleep(3); raise Exception('Simulated Error')"]
     ]
     is_executing_error[0] = False
     
@@ -73,11 +68,6 @@ if __name__ == "__main__":
         thread = threading.Thread(target=run_command, args=(cmd,))
         thread.start()
         threads.append(thread)
-
-    # starting the error thread
-    error_thread = threading.Thread(target=run_command, args=(["echo", "error"], True))
-    error_thread.start()
-    threads.append(error_thread)
 
     # Wait for threads to finish
     for thread in threads:
